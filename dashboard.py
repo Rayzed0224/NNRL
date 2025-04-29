@@ -23,7 +23,7 @@ st.title("📊 Portfolio Optimization Dashboard")
 # auto‑refresh every 10 000 ms (10 s)
 def job_running():
     return os.path.exists("reports/status.txt")
-st_autorefresh(interval=10_000, key="dash_refresh", disabled=not job_running())
+st_autorefresh(interval=10_000, key="dash_refresh")
 
 # ====================== util helpers FIRST 🡇🡇🡇 ======================
 @st.cache_data(show_spinner=False)
