@@ -1,13 +1,19 @@
 # === evaluate_agent.py (Auto-detect PPO or DQN + Visuals + Report) ===
 
 import os
+import sys
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import gymnasium as gym
 from tqdm import tqdm
-from envs.portfolio_env import PortfolioEnv
+from scipy.optimize import minimize
+import seaborn as sns
+#from envs.portfolio_env import PortfolioEnv
+from envs.portfolio_env_real import PortfolioEnvReal
 from stable_baselines3 import PPO, DQN
+
+print("PYTHON PATH:", sys.executable)
 
 MODEL_PATHS = {
     "ppo": "models/ppo_agent.zip",
@@ -17,13 +23,15 @@ MODEL_PATHS = {
 OUT_DIR = "results";   os.makedirs(OUT_DIR, exist_ok=True)
 
 def evaluate_agent(model_type="ppo",
-                   csv_path="data/predicted_returns.csv",
+                   #csv_path="data/predicted_returns.csv",
+                   csv_path="data/historical_returns.csv",
                    dashboard_mode=False,
                    steps=1000,
                    roll=60):
     assert model_type in MODEL_PATHS, "bad model type"
-    model = (PPO if model_type=="ppo" else DQN).load(MODEL_PATHS[model_type])
-    env   = PortfolioEnv(csv_path=csv_path)
+    model = (PPO if model_type=="ppo" else DQN).load(MODEL_PATHS[model_type], device='cpu')
+    #env   = PortfolioEnv(csv_path=csv_path)
+    env = PortfolioEnvReal(csv_path="data/historical_prices.csv")
 
     obs,_ = env.reset(); balances=[env.balance]
     for _ in tqdm(range(steps), desc="eval"):
@@ -137,3 +145,53 @@ def plot_efficient_frontier(pred_csv      ="data/predicted_returns.csv",
 if __name__ == "__main__":
     evaluate_agent("ppo")
 # =====================================================================
+
+# === OPTIONAL: Risk Aversion Sweep Analysis ===
+def objective_with_transaction_costs(w, prev_w, returns, cov, alpha):
+    ret = np.dot(w, returns.mean())
+    risk = np.dot(w, np.dot(cov, w))
+    cost = np.sum(np.abs(w - prev_w)) * 0.001
+    return -(ret - alpha * risk - cost)
+
+def analyze_risk_aversion(returns, cov, risk_aversion_values, n_assets):
+    results = []
+    for alpha in risk_aversion_values:
+        w = np.random.rand(n_assets)
+        w = w / w.sum()
+        prev_w = w.copy()
+
+        result = minimize(
+            lambda w: -objective_with_transaction_costs(w, prev_w, returns, cov, alpha),
+            w,
+            method='SLSQP',
+            bounds=[(0.05, 1) for _ in range(n_assets)],
+            constraints={'type': 'eq', 'fun': lambda w: np.sum(w) - 1}
+        )
+
+        if result.success:
+            opt_w = result.x / result.x.sum()
+            ann_ret = np.dot(opt_w, returns.mean()) * 252
+            ann_cov = cov * 252
+            risk = np.sqrt(np.dot(opt_w, np.dot(ann_cov, opt_w)))
+            sharpe = (ann_ret - 0.02) / risk
+            results.append({
+                "Alpha": alpha,
+                "Return": ann_ret,
+                "Risk": risk,
+                "Sharpe": sharpe,
+                **{f"W_{i}": w_i for i, w_i in enumerate(opt_w)}
+            })
+
+    return pd.DataFrame(results)
+
+# === RUN RISK ANALYSIS ===
+try:
+    df_returns = pd.read_csv("data/historical_returns.csv")
+    cov = df_returns.cov()
+    alphas = [0.05, 0.1, 0.3, 0.5, 0.7, 1.0]
+    df_risk = analyze_risk_aversion(df_returns, cov, alphas, df_returns.shape[1])
+    df_risk.to_csv("results/risk_aversion_analysis.csv", index=False)
+    print("\n--- Risk Aversion Sweep Complete ---")
+    print(df_risk[["Alpha", "Return", "Risk", "Sharpe"]])
+except Exception as e:
+    print(f"Risk sweep failed: {e}")

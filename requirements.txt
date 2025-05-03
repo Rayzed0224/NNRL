@@ -1,0 +1,10 @@
+pandas
+numpy
+matplotlib
+seaborn
+scipy
+gymnasium
+stable-baselines3
+torch
+tqdm
+tabulate
