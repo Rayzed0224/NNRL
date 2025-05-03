@@ -1,0 +1,89 @@
+## 🧪 How To Run This Project
+
+### ✅ 1. Install Python (3.8–3.11 recommended)
+
+[https://www.python.org/downloads/](https://www.python.org/downloads/)
+✔️ Check "Add to PATH" during install
+
+---
+
+### ✅ 2. Set Up Virtual Environment (optional but clean)
+
+```bash
+python -m venv venv
+venv\Scripts\activate      # Windows
+source venv/bin/activate   # macOS/Linux
+```
+
+---
+
+### ✅ 3. Install Requirements
+
+```bash
+pip install -r requirements.txt
+```
+
+> Make sure you're using Python 3.8+ and pip is up to date.
+
+---
+
+### ✅ 4. Generate Your Data
+
+```bash
+python import_data.py
+```
+
+This will:
+
+* Download 2013–2018 stock data from Yahoo Finance
+* Save `historical_returns.csv` and `historical_prices.csv` in `/data`
+
+---
+
+### ✅ 5. Evaluate the PPO Agent (Optional)
+
+```bash
+python evaluate_agent.py
+```
+
+Requirements:
+
+* You must place your pre-trained `ppo_agent.zip` into `/models`
+
+This generates:
+
+* `results/ppo_equity.png`
+* `results/ppo_stats.csv`
+* `results/ppo_ret_hist.png`, etc.
+
+---
+
+### ✅ 6. Run Full Algo Comparison
+
+```bash
+python compare.py
+```
+
+This will:
+
+* Compare **PSO**, **GA**, **GD**, and **pre-trained PPO**
+* Evaluate all of them on test period (2017–2018)
+* Print results to terminal
+* Save visual results into `/results` folder
+
+---
+
+## 📦 Dependencies (inside requirements.txt)
+
+```txt
+pandas
+numpy
+matplotlib
+seaborn
+scipy
+gymnasium
+stable-baselines3
+torch
+tqdm
+tabulate
+```
