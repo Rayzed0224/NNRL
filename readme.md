@@ -22,12 +22,12 @@ git clone https://github.com/Rayzed0224/NNRL.git
 ```bash
 pip install -r requirements.txt
 
-### Generating CSV
+### 3. Generating CSV (Skip if data/historical_returns.csv exists)
 
 ```bash
 python import_data.py
 
-### 3 Running the script
+### 4. Running the script
 
 ```bash
 python compare.py
