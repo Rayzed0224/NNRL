@@ -16,3 +16,18 @@ This project compares four algorithmic strategies to optimise stock portfolio we
 
 ```bash
 git clone https://github.com/Rayzed0224/NNRL.git
+
+### 2. Install Dependencies
+
+```bash
+pip install -r requirements.txt
+
+### Generating CSV
+
+```bash
+python import_data.py
+
+### 3 Running the script
+
+```bash
+python compare.py
